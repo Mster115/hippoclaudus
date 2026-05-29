@@ -1,5 +1,5 @@
 ---
-description: claude-obsidian: LLM Wiki Pattern for Obsidian vaults. Always-on context for any project pointed at this repo.
+description: hippoclaudus: LLM Wiki Pattern for Obsidian vaults. Always-on context for any project pointed at this repo.
 globs:
   - "wiki/**/*.md"
   - ".raw/**/*"
@@ -7,7 +7,7 @@ globs:
 alwaysApply: true
 ---
 
-# claude-obsidian
+# hippoclaudus
 
 A Claude Code plugin and Obsidian vault that builds persistent, compounding knowledge bases using Andrej Karpathy's LLM Wiki pattern. This repo works with Cursor's AI through the cross-platform Agent Skills format.
 

@@ -1,4 +1,4 @@
-# claude-obsidian: Windsurf Rules
+# hippoclaudus: Windsurf Rules
 
 This repo is a knowledge companion that builds persistent, compounding Obsidian wiki vaults using Andrej Karpathy's LLM Wiki pattern. The skills are written in the cross-platform Agent Skills format and work in Cascade alongside Claude Code.
 

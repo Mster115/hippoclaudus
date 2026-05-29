@@ -15,7 +15,7 @@ RESET = "\033[0m"
 VAULT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 def print_header():
-    print(f"{BOLD}{BLUE}Compound Vault CLI v1.9.2{RESET} - {CYAN}obsidian + claude toolchain{RESET}\n")
+    print(f"{BOLD}{BLUE}Hippoclaudus CLI v1.9.2{RESET} - {CYAN}obsidian + claude toolchain{RESET}\n")
 
 def print_help():
     print_header()
