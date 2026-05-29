@@ -1,0 +1,143 @@
+#!/usr/bin/env python3
+import os
+import sys
+import subprocess
+
+# Colors
+GREEN = "\033[92m"
+BLUE = "\033[94m"
+CYAN = "\033[96m"
+YELLOW = "\033[93m"
+RED = "\033[91m"
+BOLD = "\033[1m"
+RESET = "\033[0m"
+
+VAULT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+def print_header():
+    print(f"{BOLD}{BLUE}Compound Vault CLI v1.9.2{RESET} - {CYAN}obsidian + claude toolchain{RESET}\n")
+
+def print_help():
+    print_header()
+    print(f"{BOLD}Usage:{RESET} wiki <command> [args...]\n")
+    print(f"{BOLD}Commands:{RESET}")
+    print(f"  {GREEN}setup{RESET}                 Scaffold the Obsidian vault (runs setup-vault.sh)")
+    print(f"  {GREEN}lock{RESET} <action> [args...]   Multi-writer locking system")
+    print(f"                         Actions: acquire <path>, release <path>, list, clear-stale")
+    print(f"  {GREEN}address{RESET} <action>        Unique note ID (c-NNNNNN) allocation")
+    print(f"                         Actions: allocate, peek, rebuild")
+    print(f"  {GREEN}mode{RESET} <action> [args...]   Methodology Mode (LYT, PARA, Zettelkasten)")
+    print(f"                         Actions: get, set <mode>, route <type> <name>")
+    print(f"  {GREEN}query{RESET} <text>            Run hybrid sparse/rerank context search")
+    print(f"  {GREEN}lint{RESET}                  Check duplicate concepts / semantic tiling lint")
+    print()
+
+def run_script(cmd, cwd=VAULT_ROOT):
+    try:
+        res = subprocess.run(cmd, shell=True, cwd=cwd, check=False)
+        sys.exit(res.returncode)
+    except Exception as e:
+        print(f"{RED}ERR: Failed to execute script: {e}{RESET}", file=sys.stderr)
+        sys.exit(1)
+
+def handle_lock(args):
+    if not args:
+        print(f"{RED}ERR: Missing lock action. Use: wiki lock <acquire|release|list|clear-stale>{RESET}\n", file=sys.stderr)
+        sys.exit(1)
+    
+    action = args[0]
+    script_path = os.path.join(VAULT_ROOT, "scripts", "wiki-lock.sh")
+    
+    if action == "acquire" and len(args) > 1:
+        run_script(f"bash '{script_path}' acquire '{args[1]}'")
+    elif action == "release" and len(args) > 1:
+        run_script(f"bash '{script_path}' release '{args[1]}'")
+    elif action == "list":
+        run_script(f"bash '{script_path}' list")
+    elif action == "clear-stale":
+        extra = " ".join(args[1:])
+        run_script(f"bash '{script_path}' clear-stale {extra}")
+    else:
+        print(f"{RED}ERR: Invalid lock action or missing arguments.{RESET}", file=sys.stderr)
+        sys.exit(1)
+
+def handle_address(args):
+    if not args:
+        print(f"{RED}ERR: Missing address action. Use: wiki address <allocate|peek|rebuild>{RESET}\n", file=sys.stderr)
+        sys.exit(1)
+    
+    action = args[0]
+    script_path = os.path.join(VAULT_ROOT, "scripts", "allocate-address.sh")
+    
+    if action == "allocate":
+        run_script(f"bash '{script_path}'")
+    elif action == "peek":
+        run_script(f"bash '{script_path}' --peek")
+    elif action == "rebuild":
+        run_script(f"bash '{script_path}' --rebuild")
+    else:
+        print(f"{RED}ERR: Invalid address action.{RESET}", file=sys.stderr)
+        sys.exit(1)
+
+def handle_mode(args):
+    if not args:
+        print(f"{RED}ERR: Missing mode action. Use: wiki mode <get|set|route>{RESET}\n", file=sys.stderr)
+        sys.exit(1)
+        
+    action = args[0]
+    script_path = os.path.join(VAULT_ROOT, "scripts", "wiki-mode.py")
+    
+    if action == "get":
+        run_script(f"python3 '{script_path}' get")
+    elif action == "set" and len(args) > 1:
+        run_script(f"python3 '{script_path}' set '{args[1]}'")
+    elif action == "route" and len(args) > 2:
+        run_script(f"python3 '{script_path}' route '{args[1]}' '{args[2]}'")
+    else:
+        print(f"{RED}ERR: Invalid mode action or missing arguments.{RESET}", file=sys.stderr)
+        sys.exit(1)
+
+def handle_query(args):
+    if not args:
+        print(f"{RED}ERR: Missing search query.{RESET}", file=sys.stderr)
+        sys.exit(1)
+        
+    query_str = " ".join(args)
+    script_path = os.path.join(VAULT_ROOT, "scripts", "retrieve.py")
+    run_script(f"python3 '{script_path}' '{query_str}'")
+
+def handle_lint():
+    script_path = os.path.join(VAULT_ROOT, "scripts", "tiling-check.py")
+    run_script(f"python3 '{script_path}'")
+
+def main():
+    if len(sys.argv) < 2:
+        print_help()
+        sys.exit(0)
+        
+    cmd = sys.argv[1]
+    args = sys.argv[2:]
+    
+    if cmd in ("-h", "--help", "help"):
+        print_help()
+        sys.exit(0)
+    elif cmd == "setup":
+        script_path = os.path.join(VAULT_ROOT, "bin", "setup-vault.sh")
+        run_script(f"bash '{script_path}'")
+    elif cmd == "lock":
+        handle_lock(args)
+    elif cmd == "address":
+        handle_address(args)
+    elif cmd == "mode":
+        handle_mode(args)
+    elif cmd == "query":
+        handle_query(args)
+    elif cmd == "lint":
+        handle_lint()
+    else:
+        print(f"{RED}ERR: Unknown command '{cmd}'.{RESET}\n", file=sys.stderr)
+        print_help()
+        sys.exit(1)
+
+if __name__ == "__main__":
+    main()
