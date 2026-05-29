@@ -87,6 +87,27 @@ elif [ -f "$EXCALIDRAW/main.js" ]; then
   echo "✓ Excalidraw main.js already present"
 fi
 
+# ── 6. Link commands, skills, and hooks into .claude/ ─────────────────────────
+echo "Linking commands, skills, and hooks to .claude/ directory..."
+mkdir -p "$VAULT/.claude"
+
+# Remove existing .claude directory assets if they are folders or broken symlinks
+rm -rf "$VAULT/.claude/commands" "$VAULT/.claude/skills" "$VAULT/.claude/hooks.json"
+
+# Attempt to symlink. If symlinking fails, fall back to copy.
+if ln -s "$VAULT/commands" "$VAULT/.claude/commands" 2>/dev/null && \
+   ln -s "$VAULT/skills" "$VAULT/.claude/skills" 2>/dev/null && \
+   ln -s "$VAULT/hooks/hooks.json" "$VAULT/.claude/hooks.json" 2>/dev/null; then
+  echo "✓ Successfully symlinked commands, skills, and hooks to .claude/"
+else
+  echo "Symlinking failed or unsupported. Copying files instead..."
+  mkdir -p "$VAULT/.claude/commands" "$VAULT/.claude/skills"
+  cp -R "$VAULT/commands/"* "$VAULT/.claude/commands/" 2>/dev/null || true
+  cp -R "$VAULT/skills/"* "$VAULT/.claude/skills/" 2>/dev/null || true
+  cp "$VAULT/hooks/hooks.json" "$VAULT/.claude/hooks.json" 2>/dev/null || true
+  echo "✓ Successfully copied commands, skills, and hooks to .claude/"
+fi
+
 echo ""
 echo "✓ Setup complete."
 echo ""

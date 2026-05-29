@@ -32,11 +32,30 @@ mkdir -p "$(dirname "$COUNTER_FILE")" || {
 }
 
 # Acquire exclusive lock with 5-second timeout. Release automatically on scope exit.
-exec 9>"$LOCK_FILE"
-if ! flock -x -w 5 9; then
-  echo "ERR: could not acquire address allocator lock within 5s" >&2
-  exit 1
+if command -v flock >/dev/null 2>&1; then
+  exec 9>"$LOCK_FILE"
+  if ! flock -x -w 5 9; then
+    echo "ERR: could not acquire address allocator lock within 5s" >&2
+    exit 1
+  fi
+else
+  # Fallback for macOS / systems without flock utility
+  LOCK_DIR="${LOCK_FILE}.dir"
+  ACQUIRED=false
+  for i in {1..50}; do
+    if mkdir "$LOCK_DIR" 2>/dev/null; then
+      ACQUIRED=true
+      trap "rm -rf '${LOCK_DIR}'" EXIT
+      break
+    fi
+    sleep 0.1
+  done
+  if [ "$ACQUIRED" = "false" ]; then
+    echo "ERR: could not acquire address allocator lock within 5s" >&2
+    exit 1
+  fi
 fi
+
 
 scan_max_c_address() {
   # Emit the largest NNNNNN from "address: c-NNNNNN" lines that appear inside

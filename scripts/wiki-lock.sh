@@ -152,10 +152,30 @@ is_alive() {
 with_meta_lock() {
   ensure_dirs
   # Use flock under bash's redirect; meta lock is short-lived per command.
-  (
-    flock -x -w 5 9 || die "could not acquire meta-lock within 5s" 1
-    "$@"
-  ) 9>"$META_LOCK"
+  if command -v flock >/dev/null 2>&1; then
+    (
+      flock -x -w 5 9 || die "could not acquire meta-lock within 5s" 1
+      "$@"
+    ) 9>"$META_LOCK"
+  else
+    # Fallback for macOS / systems without flock utility
+    local lockdir="${META_LOCK}.dir"
+    local acquired=false
+    for i in {1..50}; do
+      if mkdir "$lockdir" 2>/dev/null; then
+        acquired=true
+        trap "rm -rf '${lockdir}'" EXIT
+        break
+      fi
+      sleep 0.1
+    done
+    if [ "$acquired" = "true" ]; then
+      "$@"
+      rm -rf "$lockdir"
+    else
+      die "could not acquire meta-lock within 5s" 1
+    fi
+  fi
 }
 
 read_lockfile() {
